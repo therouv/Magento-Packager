@@ -64,22 +64,24 @@ class Mage_Shell_Packager extends Mage_Shell_Abstract
                 $this->getConfig()->setData('license_uri', $this->getLicenseUri());
                 $this->getConfig()->setData('summary', $this->getSummary());
                 $this->getConfig()->setData('description', $this->getDescription());
-                $this->getConfig()->setData('version', (string)Mage::getConfig()->getNode()->modules->$name->version);
+                $this->getConfig()->setData('version', $this->getVersion());
                 $this->getConfig()->setData('stability', $this->getStability());
                 $this->getConfig()->setData('authors', $this->getAuthors());
                 $this->getConfig()->setData('depends_php_min', $this->getPhpMin());
                 $this->getConfig()->setData('depends_php_max', $this->getPhpMax());
                 $this->getConfig()->setData('contents', $this->getContent());
 
-                //Packager thinks in context of index.php
+                // Packager thinks in context of index.php
                 chdir(BP);
+
                 /* @var $package Mage_Connect_Model_Extension */
                 $package = Mage::getModel('connect/extension');
                 $package->setData($this->getConfig()->getData());
                 $package->createPackage();
+
                 echo "Package created at: " . Mage::helper('connect')->getLocalPackagesPath() . PHP_EOL;
             } catch (Exception $e) {
-                echo "Errer encountered: " . $e->getMessage() . PHP_EOL;
+                echo "Error encountered: " . $e->getMessage() . PHP_EOL;
                 echo $e->getTraceAsString() . PHP_EOL;
             }
 
@@ -141,7 +143,39 @@ class Mage_Shell_Packager extends Mage_Shell_Abstract
             $name = $this->getComposerJson()->name;
             $name = join('_', array_map('ucfirst', explode('/', $name)));
         }
+
         return $name;
+    }
+
+    /**
+     * Retrieve the version name
+     *
+     * @return string
+     */
+    public function getVersion()
+    {
+        $name = $this->getComposerJson()->extra->magento_connect->name;
+        $realModuleName = $this->getComposerJson()->extra->magento_connect->real_module_name;
+
+        if ($name && $realModuleName && $name != $realModuleName) {
+            $name = $realModuleName;
+        }
+
+        return (string) Mage::getConfig()->getNode()->modules->$name->version;
+    }
+
+    /**
+     * Parse the filename
+     *
+     * @return string
+     */
+    public function getFileName()
+    {
+        $fileName = $this->getComposerJson()->extra->magento_connect->file_name;
+        if (!$fileName) {
+            $fileName = $this->getModuleName();
+        }
+        return $fileName;
     }
 
     /**
